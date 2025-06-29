@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BabyActivity, ActivityType } from '@/types';
 import { getActivityConfig, getTimeSlotIndex, generateId, getAllActivityConfigs } from '@/lib/utils';
 import FeedingForm from './FeedingForm';
@@ -35,6 +35,20 @@ export default function Timeline({ activities, onAddActivity, onActivityClick }:
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [selectedActivityType, setSelectedActivityType] = useState<ActivityType | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+
+  // 客户端时间管理
+  useEffect(() => {
+    setIsClient(true);
+    setCurrentTime(new Date());
+    
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // 生成时间槽
   const timeSlots = useMemo(() => {
@@ -283,13 +297,15 @@ export default function Timeline({ activities, onAddActivity, onActivityClick }:
               );
             })}
 
-            {/* 当前时间指示器 */}
-            <div
-              className="absolute top-0 w-0.5 h-full bg-red-500 z-10"
-              style={{ 
-                left: `${(getTimeSlotIndex(new Date()) / 143) * 100}%` 
-              }}
-            />
+            {/* 当前时间指示器 - 只在客户端显示 */}
+            {isClient && currentTime && (
+              <div
+                className="absolute top-0 w-0.5 h-full bg-red-500 z-10"
+                style={{ 
+                  left: `${(getTimeSlotIndex(currentTime) / 143) * 100}%` 
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -302,58 +318,81 @@ export default function Timeline({ activities, onAddActivity, onActivityClick }:
               添加活动 - {selectedTimeSlot !== null ? timeSlots[selectedTimeSlot].time : ''}
             </h3>
             
-            {selectedActivityType === 'feeding' ? (
-              // 喂养活动专用表单
-              <FeedingForm
-                initialTime={selectedTimeSlot !== null ? timeSlots[selectedTimeSlot].time : ''}
-                onSubmit={handleFeedingSubmit}
-                onCancel={handleModalCancel}
-                onBack={handleBackToActivitySelection}
-                showBackButton={true}
-              />
-            ) : selectedActivityType === 'diaper' ? (
-              // 尿布活动专用表单
-              <DiaperForm
-                initialTime={selectedTimeSlot !== null ? timeSlots[selectedTimeSlot].time : ''}
-                onSubmit={handleDiaperSubmit}
-                onCancel={handleModalCancel}
-                onBack={handleBackToActivitySelection}
-                showBackButton={true}
-              />
-            ) : selectedActivityType === 'sleep' ? (
-              // 睡眠活动专用表单
-              <SleepForm
-                initialTime={selectedTimeSlot !== null ? timeSlots[selectedTimeSlot].time : ''}
-                onSubmit={handleSleepSubmit}
-                onCancel={handleModalCancel}
-                onBack={handleBackToActivitySelection}
-                showBackButton={true}
-              />
-            ) : (
+            {!selectedActivityType ? (
               // 活动类型选择
-              <>
-                <div className="grid grid-cols-3 gap-3 mb-4">
-                  {Object.entries(getAllActivityConfigs()).map(([type, config]) => (
-                    <button
-                      key={type}
-                      className="p-3 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
-                      onClick={() => handleActivityTypeSelect(type as ActivityType)}
-                    >
-                      <div className="text-2xl mb-1">{config.icon}</div>
-                      <div className="text-sm text-white">{config.name}</div>
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-2">
+              <div className="grid grid-cols-2 gap-3">
+                {Object.entries(getAllActivityConfigs()).map(([type, config]) => (
                   <button
-                    className="flex-1 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
-                    onClick={handleModalCancel}
+                    key={type}
+                    className="flex items-center space-x-2 p-3 bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                    onClick={() => handleActivityTypeSelect(type as ActivityType)}
                   >
-                    取消
+                    <div
+                      className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                      style={{ backgroundColor: config.color }}
+                    >
+                      {config.icon}
+                    </div>
+                    <span className="text-white">{config.name}</span>
                   </button>
+                ))}
+              </div>
+            ) : (
+              // 活动详情输入
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+                    style={{ backgroundColor: getActivityConfig(selectedActivityType).color }}
+                  >
+                    {getActivityConfig(selectedActivityType).icon}
+                  </div>
+                  <span className="text-white font-medium">
+                    {getActivityConfig(selectedActivityType).name}
+                  </span>
                 </div>
-              </>
+                
+                <textarea
+                  className="w-full p-3 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+                  placeholder="添加详情（可选）"
+                  rows={3}
+                  id="activity-details"
+                />
+              </div>
             )}
+
+            <div className="flex gap-2 mt-6">
+              {selectedActivityType && (
+                <button
+                  className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
+                  onClick={() => setSelectedActivityType(null)}
+                >
+                  返回
+                </button>
+              )}
+              <button
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
+                onClick={() => {
+                  setShowAddModal(false);
+                  setSelectedTimeSlot(null);
+                  setSelectedActivityType(null);
+                }}
+              >
+                取消
+              </button>
+              {selectedActivityType && (
+                <button
+                  className="flex-1 px-4 py-2 text-white rounded transition-colors"
+                  style={{ backgroundColor: getActivityConfig(selectedActivityType).color }}
+                  onClick={() => {
+                    const details = (document.getElementById('activity-details') as HTMLTextAreaElement)?.value;
+                    handleAddActivity(selectedActivityType, details);
+                  }}
+                >
+                  添加
+                </button>
+              )}
+            </div>
           </div>
         </div>
       )}

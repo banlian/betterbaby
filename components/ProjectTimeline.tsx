@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { BabyActivity, ActivityType } from '@/types';
 import { getActivityConfig, getTimeSlotIndex, generateId } from '@/lib/utils';
 import FeedingForm from './FeedingForm';
@@ -43,8 +43,22 @@ export default function ProjectTimeline({
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
 
   const config = getActivityConfig(projectType);
+
+  // 客户端时间管理
+  useEffect(() => {
+    setIsClient(true);
+    setCurrentTime(new Date());
+    
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // 过滤出当前项目的活动
   const projectActivities = useMemo(() => {
@@ -336,13 +350,15 @@ export default function ProjectTimeline({
               );
             })}
 
-            {/* 当前时间指示器 */}
-            <div
-              className="absolute top-0 w-0.5 h-full bg-red-500 z-10"
-              style={{ 
-                left: `${(getTimeSlotIndex(new Date()) / 143) * 100}%` 
-              }}
-            />
+            {/* 当前时间指示器 - 只在客户端显示 */}
+            {isClient && currentTime && (
+              <div
+                className="absolute top-0 w-0.5 h-full bg-red-500 z-10"
+                style={{ 
+                  left: `${(getTimeSlotIndex(currentTime) / 143) * 100}%` 
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
