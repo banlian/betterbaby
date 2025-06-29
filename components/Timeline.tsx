@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import { BabyActivity, ActivityType } from '@/types';
 import { getActivityConfig, getTimeSlotIndex, generateId, getAllActivityConfigs } from '@/lib/utils';
 import FeedingForm from './FeedingForm';
+import DiaperForm from './DiaperForm';
+import SleepForm from './SleepForm';
 
 interface TimelineProps {
   activities: BabyActivity[];
@@ -15,6 +17,18 @@ interface FeedingDetails {
   time: string;
   amount: number;
   category: 'milk' | 'food';
+}
+
+interface DiaperDetails {
+  time: string;
+  type: 'wet' | 'dirty' | 'both';
+  status: 'normal' | 'unusual';
+}
+
+interface SleepDetails {
+  time: string;
+  type: 'nap' | 'night';
+  duration: number;
 }
 
 export default function Timeline({ activities, onAddActivity, onActivityClick }: TimelineProps) {
@@ -51,8 +65,8 @@ export default function Timeline({ activities, onAddActivity, onActivityClick }:
 
   const handleActivityTypeSelect = (type: ActivityType) => {
     setSelectedActivityType(type);
-    if (type === 'feeding') {
-      // 如果是喂养活动，直接显示喂养表单
+    if (type === 'feeding' || type === 'diaper' || type === 'sleep') {
+      // 如果是需要详细表单的活动，直接显示对应表单
       return;
     }
     // 其他活动直接添加
@@ -93,6 +107,71 @@ export default function Timeline({ activities, onAddActivity, onActivityClick }:
       const newActivity: BabyActivity = {
         id: generateId(),
         type: 'feeding',
+        timestamp: activityTime,
+        details: activityDetails
+      };
+      onAddActivity(newActivity);
+      setShowAddModal(false);
+      setSelectedTimeSlot(null);
+      setSelectedActivityType(null);
+    }
+  };
+
+  const handleDiaperSubmit = (diaperDetails: DiaperDetails, notes?: string) => {
+    if (selectedTimeSlot !== null) {
+      const slot = timeSlots[selectedTimeSlot];
+      let activityTime = new Date(new Date().setHours(slot.hour, slot.minute, 0, 0));
+      
+      // 如果用户调整了时间，使用调整后的时间
+      if (diaperDetails.time && diaperDetails.time !== slot.time) {
+        const [hours, minutes] = diaperDetails.time.split(':').map(Number);
+        activityTime = new Date(new Date().setHours(hours, minutes, 0, 0));
+      }
+      
+      // 生成活动详情
+      const typeText = {
+        wet: '尿尿',
+        dirty: '便便',
+        both: '尿尿+便便'
+      }[diaperDetails.type];
+      
+      const statusText = diaperDetails.status === 'normal' ? '正常' : '异常';
+      const activityDetails = `${typeText} (${statusText})${notes ? ` - ${notes}` : ''}`;
+      
+      const newActivity: BabyActivity = {
+        id: generateId(),
+        type: 'diaper',
+        timestamp: activityTime,
+        details: activityDetails
+      };
+      onAddActivity(newActivity);
+      setShowAddModal(false);
+      setSelectedTimeSlot(null);
+      setSelectedActivityType(null);
+    }
+  };
+
+  const handleSleepSubmit = (sleepDetails: SleepDetails, notes?: string) => {
+    if (selectedTimeSlot !== null) {
+      const slot = timeSlots[selectedTimeSlot];
+      let activityTime = new Date(new Date().setHours(slot.hour, slot.minute, 0, 0));
+      
+      // 如果用户调整了时间，使用调整后的时间
+      if (sleepDetails.time && sleepDetails.time !== slot.time) {
+        const [hours, minutes] = sleepDetails.time.split(':').map(Number);
+        activityTime = new Date(new Date().setHours(hours, minutes, 0, 0));
+      }
+      
+      // 生成活动详情
+      const typeText = sleepDetails.type === 'nap' ? '小睡' : '夜间睡眠';
+      const durationText = sleepDetails.duration >= 60 
+        ? `${Math.floor(sleepDetails.duration / 60)}小时${sleepDetails.duration % 60 > 0 ? sleepDetails.duration % 60 + '分钟' : ''}`
+        : `${sleepDetails.duration}分钟`;
+      const activityDetails = `${typeText} ${durationText}${notes ? ` - ${notes}` : ''}`;
+      
+      const newActivity: BabyActivity = {
+        id: generateId(),
+        type: 'sleep',
         timestamp: activityTime,
         details: activityDetails
       };
@@ -228,6 +307,24 @@ export default function Timeline({ activities, onAddActivity, onActivityClick }:
               <FeedingForm
                 initialTime={selectedTimeSlot !== null ? timeSlots[selectedTimeSlot].time : ''}
                 onSubmit={handleFeedingSubmit}
+                onCancel={handleModalCancel}
+                onBack={handleBackToActivitySelection}
+                showBackButton={true}
+              />
+            ) : selectedActivityType === 'diaper' ? (
+              // 尿布活动专用表单
+              <DiaperForm
+                initialTime={selectedTimeSlot !== null ? timeSlots[selectedTimeSlot].time : ''}
+                onSubmit={handleDiaperSubmit}
+                onCancel={handleModalCancel}
+                onBack={handleBackToActivitySelection}
+                showBackButton={true}
+              />
+            ) : selectedActivityType === 'sleep' ? (
+              // 睡眠活动专用表单
+              <SleepForm
+                initialTime={selectedTimeSlot !== null ? timeSlots[selectedTimeSlot].time : ''}
+                onSubmit={handleSleepSubmit}
                 onCancel={handleModalCancel}
                 onBack={handleBackToActivitySelection}
                 showBackButton={true}

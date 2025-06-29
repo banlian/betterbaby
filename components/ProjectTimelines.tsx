@@ -9,21 +9,38 @@ interface ProjectTimelinesProps {
   activities: BabyActivity[];
   onAddActivity: (activity: BabyActivity) => void;
   onActivityClick: (activity: BabyActivity) => void;
+  onResetActivities: () => void;
+  onClearActivities?: (projectType: ActivityType) => void;
 }
 
 export default function ProjectTimelines({ 
   activities, 
   onAddActivity, 
-  onActivityClick 
+  onActivityClick,
+  onResetActivities,
+  onClearActivities
 }: ProjectTimelinesProps) {
   const activityConfigs = getAllActivityConfigs();
+
+  // 清除特定类型活动的处理函数
+  const handleClearActivities = (projectType: ActivityType) => {
+    if (onClearActivities) {
+      onClearActivities(projectType);
+    }
+  };
 
   return (
     <div className="w-full h-full flex flex-col">
       {/* 标题 */}
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-xl font-bold text-white">项目时间轴</h2>
-        <p className="text-sm text-gray-400">每个项目的独立时间轴</p>
+      <div className="p-4 border-b border-gray-700 flex items-center justify-between">
+        <div className="text-lg font-bold text-white">宝宝活动记录</div>
+        <button
+          onClick={onResetActivities}
+          className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors text-sm"
+          title="清空所有活动记录"
+        >
+          重置活动
+        </button>
       </div>
 
       {/* 时间轴列表 - 每个项目占一行 */}
@@ -35,6 +52,7 @@ export default function ProjectTimelines({
               activities={activities}
               onAddActivity={onAddActivity}
               onActivityClick={onActivityClick}
+              onClearActivities={handleClearActivities}
             />
           </div>
         ))}

@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
-interface FeedingDetails {
+interface SleepDetails {
   time: string;
-  amount: number;
-  category: "milk" | "food" | "water";
+  type: 'nap' | 'night';
+  duration: number;
 }
 
-interface FeedingFormProps {
+interface SleepFormProps {
   initialTime: string;
-  onSubmit: (details: FeedingDetails, notes?: string) => void;
+  onSubmit: (details: SleepDetails, notes?: string) => void;
   onCancel: () => void;
   onBack?: () => void;
   showBackButton?: boolean;
@@ -28,13 +28,6 @@ function minutesToTime(minutes: number): string {
   return `${hours.toString().padStart(2, "0")}:${mins
     .toString()
     .padStart(2, "0")}`;
-}
-
-function getCurrentTimeSlot(): number {
-  const now = new Date();
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  return hours * 60 + Math.floor(minutes / 10) * 10;
 }
 
 // 获取指定时间前后半小时的时间范围
@@ -56,19 +49,13 @@ function getTimeRange(initialTime: string): {
   };
 }
 
-export default function FeedingForm({
-  initialTime,
-  onSubmit,
-  onCancel,
-  onBack,
-  showBackButton,
-}: FeedingFormProps) {
+export default function SleepForm({ initialTime, onSubmit, onCancel, onBack, showBackButton }: SleepFormProps) {
   const timeRange = getTimeRange(initialTime);
 
-  const [feedingDetails, setFeedingDetails] = useState<FeedingDetails>({
+  const [sleepDetails, setSleepDetails] = useState<SleepDetails>({
     time: initialTime,
-    amount: 180, // 默认180ml
-    category: "milk",
+    type: 'nap',
+    duration: 60
   });
 
   // 计算滑动条的值（以10分钟为单位）
@@ -81,15 +68,10 @@ export default function FeedingForm({
     return Math.floor((normalizedValue - timeRange.min) / 10);
   });
 
-  // 奶量滑动条值（80-280ml，每10ml一个刻度）
-  const [amountSliderValue, setAmountSliderValue] = useState(() => {
-    return Math.floor((feedingDetails.amount - 80) / 10);
-  });
-
   // 当初始时间变化时更新表单
   useEffect(() => {
     const newTimeRange = getTimeRange(initialTime);
-    setFeedingDetails((prev) => ({
+    setSleepDetails((prev) => ({
       ...prev,
       time: initialTime,
     }));
@@ -105,53 +87,44 @@ export default function FeedingForm({
   useEffect(() => {
     const currentTimeRange = getTimeRange(initialTime);
     const newTime = minutesToTime(currentTimeRange.min + sliderValue * 10);
-    setFeedingDetails((prev) => ({
+    setSleepDetails((prev) => ({
       ...prev,
       time: newTime,
     }));
   }, [sliderValue, initialTime]);
 
-  // 当奶量滑动条值变化时更新奶量
-  useEffect(() => {
-    const newAmount = 80 + amountSliderValue * 10;
-    setFeedingDetails((prev) => ({
-      ...prev,
-      amount: newAmount,
-    }));
-  }, [amountSliderValue]);
-
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSliderValue(parseInt(e.target.value));
   };
 
-  const handleAmountSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmountSliderValue(parseInt(e.target.value));
-  };
-
   const handleSubmit = () => {
-    const notes = (
-      document.getElementById("feeding-notes") as HTMLTextAreaElement
-    )?.value;
-    onSubmit(feedingDetails, notes);
+    const notes = (document.getElementById('sleep-notes') as HTMLTextAreaElement)?.value;
+    onSubmit(sleepDetails, notes);
   };
 
   const handleReset = () => {
     const currentTimeRange = getTimeRange(initialTime);
     const currentSlot = Math.floor(timeToMinutes(initialTime) / 10) * 10;
     const currentTime = minutesToTime(currentSlot);
-    setFeedingDetails({
+    setSleepDetails({
       time: currentTime,
-      amount: 180,
-      category: "milk",
+      type: 'nap',
+      duration: 60
     });
     setSliderValue(Math.floor((currentSlot - currentTimeRange.min) / 10));
-    setAmountSliderValue(10); // 180ml对应的索引
-    const notesElement = document.getElementById(
-      "feeding-notes"
-    ) as HTMLTextAreaElement;
+    const notesElement = document.getElementById('sleep-notes') as HTMLTextAreaElement;
     if (notesElement) {
-      notesElement.value = "";
+      notesElement.value = '';
     }
+  };
+
+  const getDurationText = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours > 0) {
+      return `${hours}小时${mins > 0 ? mins + '分钟' : ''}`;
+    }
+    return `${mins}分钟`;
   };
 
   // 生成时间刻度标签
@@ -189,37 +162,13 @@ export default function FeedingForm({
     return labels;
   };
 
-  // 生成奶量刻度标签
-  const generateAmountLabels = () => {
-    const labels = [];
-    for (let i = 0; i <= 20; i++) {
-      // 80-280ml，每10ml一个刻度
-      const amount = 80 + i * 10;
-      if (amount % 50 === 0) {
-        // 每50ml显示
-        labels.push(
-          <div key={i} className="text-xs text-gray-400 text-center">
-            {amount}ml
-          </div>
-        );
-      } else {
-        labels.push(
-          <div key={i} className="text-xs text-gray-600 text-center">
-            ·
-          </div>
-        );
-      }
-    }
-    return labels;
-  };
-
   return (
     <div className="space-y-4">
       {/* 时间滑动控件 */}
       <div>
         <label className="block text-lg font-medium text-gray-300 mb-2">
-          喂养时间:{" "}
-          <span className="text-blue-400 font-bold">{feedingDetails.time}</span>
+          开始时间:{" "}
+          <span className="text-blue-400 font-bold">{sleepDetails.time}</span>
         </label>
         <div className="relative">
           <input
@@ -232,7 +181,7 @@ export default function FeedingForm({
             step="1"
             value={sliderValue}
             onChange={handleSliderChange}
-            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider feeding-time-slider"
+            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider sleep-time-slider"
             style={{
               background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${
                 (sliderValue /
@@ -259,88 +208,90 @@ export default function FeedingForm({
         </div>
       </div>
 
-      {/* 喂养类别 */}
+      {/* 睡眠类型 */}
       <div>
         <label className="block text-sm font-medium text-gray-300 mb-2">
-          喂养类别
+          睡眠类型
         </label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           <button
             type="button"
             className={`p-3 rounded border transition-colors ${
-              feedingDetails.category === "milk"
-                ? "bg-blue-600 border-blue-500 text-white"
-                : "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
+              sleepDetails.type === 'nap'
+                ? 'bg-blue-600 border-blue-500 text-white'
+                : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
             }`}
-            onClick={() =>
-              setFeedingDetails((prev) => ({ ...prev, category: "milk" }))
-            }
+            onClick={() => setSleepDetails(prev => ({ ...prev, type: 'nap' }))}
           >
-            奶粉
+            小睡
           </button>
           <button
             type="button"
             className={`p-3 rounded border transition-colors ${
-              feedingDetails.category === "food"
-                ? "bg-green-600 border-green-500 text-white"
-                : "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
+              sleepDetails.type === 'night'
+                ? 'bg-purple-600 border-purple-500 text-white'
+                : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
             }`}
-            onClick={() =>
-              setFeedingDetails((prev) => ({ ...prev, category: "food" }))
-            }
+            onClick={() => setSleepDetails(prev => ({ ...prev, type: 'night' }))}
           >
-            辅食
-          </button>
-          <button
-            type="button"
-            className={`p-3 rounded border transition-colors ${
-              feedingDetails.category === "water"
-                ? "bg-green-600 border-green-500 text-white"
-                : "bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600"
-            }`}
-            onClick={() =>
-              setFeedingDetails((prev) => ({ ...prev, category: "water" }))
-            }
-          >
-            水
+            夜间睡眠
           </button>
         </div>
       </div>
 
-      {/* 喂养量 */}
+      {/* 持续时间 */}
       <div>
-        <label className="block text-lg font-medium text-gray-300 mb-2">
-          喂养量:{" "}
-          <span className="text-green-400 font-bold">
-            {feedingDetails.amount}ml
-          </span>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          持续时间: {getDurationText(sleepDetails.duration)}
         </label>
-        <div className="relative">
-          <input
-            type="range"
-            min="0"
-            max="20"
-            step="1"
-            value={amountSliderValue}
-            onChange={handleAmountSliderChange}
-            className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer slider feeding-amount-slider"
-            style={{
-              background: `linear-gradient(to right, #10b981 0%, #10b981 ${
-                (amountSliderValue / 20) * 100
-              }%, #374151 ${(amountSliderValue / 20) * 100}%, #374151 100%)`,
-            }}
-          />
-          <div className="flex justify-between mt-2 px-1">
-            {generateAmountLabels()}
+        <div className="space-y-2">
+          {/* 快速选择按钮 */}
+          <div className="grid grid-cols-4 gap-2">
+            {[30, 60, 90, 120].map((minutes) => (
+              <button
+                key={minutes}
+                type="button"
+                className={`p-2 rounded border text-xs transition-colors ${
+                  sleepDetails.duration === minutes
+                    ? 'bg-indigo-600 border-indigo-500 text-white'
+                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
+                }`}
+                onClick={() => setSleepDetails(prev => ({ ...prev, duration: minutes }))}
+              >
+                {minutes}分钟
+              </button>
+            ))}
+          </div>
+          {/* 自定义时间滑块 */}
+          <div className="space-y-1">
+            <input
+              type="range"
+              min="15"
+              max="480"
+              step="15"
+              className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+              value={sleepDetails.duration}
+              onChange={(e) => setSleepDetails(prev => ({ ...prev, duration: parseInt(e.target.value) }))}
+            />
+            <div className="flex justify-between text-xs text-gray-400">
+              <span>15分钟</span>
+              <span>8小时</span>
+            </div>
           </div>
         </div>
-        <div className="flex justify-between text-xs text-gray-400 mt-1">
-          <span>80ml</span>
-          <span>130ml</span>
-          <span>180ml</span>
-          <span>230ml</span>
-          <span>280ml</span>
-        </div>
+      </div>
+
+      {/* 备注 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-300 mb-2">
+          备注（可选）
+        </label>
+        <textarea
+          id="sleep-notes"
+          className="w-full p-3 bg-gray-700 text-white rounded border border-gray-600 focus:border-blue-500 focus:outline-none"
+          placeholder="添加备注信息（如睡眠质量、环境等）"
+          rows={2}
+        />
       </div>
 
       {/* 操作按钮 */}
@@ -370,12 +321,12 @@ export default function FeedingForm({
         </button>
         <button
           type="button"
-          className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-500 transition-colors"
+          className="flex-1 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-500 transition-colors"
           onClick={handleSubmit}
         >
-          添加
+          添加睡眠
         </button>
       </div>
     </div>
   );
-}
+} 

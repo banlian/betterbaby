@@ -6,7 +6,7 @@ import DailyStats from '@/components/DailyStats';
 import ProjectTimelines from '@/components/ProjectTimelines';
 import ActivityModal from '@/components/ActivityModal';
 import { BabyActivity, ActivityType } from '@/types';
-import { generateId } from '@/lib/utils';
+import { generateId, getActivityConfig } from '@/lib/utils';
 
 export default function Home() {
   const [activities, setActivities] = useState<BabyActivity[]>([]);
@@ -42,6 +42,22 @@ export default function Home() {
     setActivities(prev => prev.filter(a => a.id !== activity.id));
   };
 
+  // 重置所有活动
+  const handleResetActivities = () => {
+    if (window.confirm('确定要清空所有活动记录吗？此操作不可撤销。')) {
+      setActivities([]);
+      localStorage.removeItem('babyActivities');
+    }
+  };
+
+  // 清除特定类型的活动
+  const handleClearActivities = (projectType: ActivityType) => {
+    const activityConfig = getActivityConfig(projectType);
+    if (window.confirm(`确定要清除所有 ${activityConfig.name} 活动吗？此操作不可撤销。`)) {
+      setActivities(prev => prev.filter(activity => activity.type !== projectType));
+    }
+  };
+
   // 点击活动
   const handleActivityClick = (activity: BabyActivity) => {
     setSelectedActivity(activity);
@@ -67,8 +83,6 @@ export default function Home() {
           <DigitalClock />
         </div>
 
-        {/* 今日统计 - 占据一整行 */}
-        <DailyStats activities={activities} />
 
         {/* 下方 - 项目时间轴 */}
         <div className="flex-1">
@@ -76,6 +90,8 @@ export default function Home() {
             activities={activities}
             onAddActivity={handleAddActivity}
             onActivityClick={handleActivityClick}
+            onResetActivities={handleResetActivities}
+            onClearActivities={handleClearActivities}
           />
         </div>
       </div>

@@ -81,3 +81,95 @@ body {
     transform: scale(1.1);
     filter: brightness(1.2);
 }
+
+
+/* 睡眠表单滑块样式 */
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-track {
+    background: #374151;
+    height: 8px;
+    border-radius: 4px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    background: #3b82f6;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    background: #2563eb;
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+input[type="range"]::-moz-range-track {
+    background: #374151;
+    height: 8px;
+    border-radius: 4px;
+    border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+    background: #3b82f6;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+    background: #2563eb;
+    transform: scale(1.1);
+    box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+}
+
+
+/* 喂养表单时间滑动控件特殊样式 */
+
+.feeding-time-slider {
+    background: linear-gradient(to right, #3b82f6 0%, #3b82f6 50%, #374151 50%, #374151 100%);
+}
+
+.feeding-time-slider::-webkit-slider-thumb {
+    background: #3b82f6;
+    border: 2px solid #1e40af;
+}
+
+.feeding-time-slider::-moz-range-thumb {
+    background: #3b82f6;
+    border: 2px solid #1e40af;
+}
+
+
+/* 喂养表单奶量滑动控件特殊样式 */
+
+.feeding-amount-slider {
+    background: linear-gradient(to right, #10b981 0%, #10b981 50%, #374151 50%, #374151 100%);
+}
+
+.feeding-amount-slider::-webkit-slider-thumb {
+    background: #10b981;
+    border: 2px solid #059669;
+}
+
+.feeding-amount-slider::-moz-range-thumb {
+    background: #10b981;
+    border: 2px solid #059669;
+}

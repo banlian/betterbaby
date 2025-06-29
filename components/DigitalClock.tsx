@@ -38,7 +38,7 @@ export default function DigitalClock() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center h-32 text-white">
+    <div className="flex flex-col items-center justify-center h-48 text-white">
       {/* 时间显示 */}
       <div className="digital-clock text-4xl md:text-5xl lg:text-6xl font-bold mb-2">
         {formatTime(currentTime)}

@@ -4,28 +4,45 @@ import { useState, useMemo } from 'react';
 import { BabyActivity, ActivityType } from '@/types';
 import { getActivityConfig, getTimeSlotIndex, generateId } from '@/lib/utils';
 import FeedingForm from './FeedingForm';
+import DiaperForm from './DiaperForm';
+import SleepForm from './SleepForm';
 
 interface ProjectTimelineProps {
   projectType: ActivityType;
   activities: BabyActivity[];
   onAddActivity: (activity: BabyActivity) => void;
   onActivityClick: (activity: BabyActivity) => void;
+  onClearActivities?: (projectType: ActivityType) => void;
 }
 
 interface FeedingDetails {
   time: string;
   amount: number;
-  category: 'milk' | 'food';
+  category: 'milk' | 'food' | 'water';
+}
+
+interface DiaperDetails {
+  time: string;
+  type: 'wet' | 'dirty' | 'both';
+  status: 'normal' | 'unusual';
+}
+
+interface SleepDetails {
+  time: string;
+  type: 'nap' | 'night';
+  duration: number;
 }
 
 export default function ProjectTimeline({ 
   projectType, 
   activities, 
   onAddActivity, 
-  onActivityClick 
+  onActivityClick,
+  onClearActivities
 }: ProjectTimelineProps) {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<number | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const config = getActivityConfig(projectType);
 
@@ -88,7 +105,11 @@ export default function ProjectTimeline({
       }
       
       // 生成活动详情
-      const categoryText = feedingDetails.category === 'milk' ? '奶粉' : '辅食';
+      const categoryText = {
+        milk: '奶粉',
+        food: '辅食',
+        water: '水'
+      }[feedingDetails.category];
       const activityDetails = `${categoryText} ${feedingDetails.amount}ml${notes ? ` - ${notes}` : ''}`;
       
       const newActivity: BabyActivity = {
@@ -103,13 +124,83 @@ export default function ProjectTimeline({
     }
   };
 
+  const handleDiaperSubmit = (diaperDetails: DiaperDetails, notes?: string) => {
+    if (selectedTimeSlot !== null) {
+      const slot = timeSlots[selectedTimeSlot];
+      let activityTime = new Date(new Date().setHours(slot.hour, slot.minute, 0, 0));
+      
+      // 如果用户调整了时间，使用调整后的时间
+      if (diaperDetails.time && diaperDetails.time !== slot.time) {
+        const [hours, minutes] = diaperDetails.time.split(':').map(Number);
+        activityTime = new Date(new Date().setHours(hours, minutes, 0, 0));
+      }
+      
+      // 生成活动详情
+      const typeText = {
+        wet: '尿尿',
+        dirty: '便便',
+        both: '尿尿+便便'
+      }[diaperDetails.type];
+      
+      const statusText = diaperDetails.status === 'normal' ? '正常' : '异常';
+      const activityDetails = `${typeText} (${statusText})${notes ? ` - ${notes}` : ''}`;
+      
+      const newActivity: BabyActivity = {
+        id: generateId(),
+        type: 'diaper',
+        timestamp: activityTime,
+        details: activityDetails
+      };
+      onAddActivity(newActivity);
+      setShowAddModal(false);
+      setSelectedTimeSlot(null);
+    }
+  };
+
+  const handleSleepSubmit = (sleepDetails: SleepDetails, notes?: string) => {
+    if (selectedTimeSlot !== null) {
+      const slot = timeSlots[selectedTimeSlot];
+      let activityTime = new Date(new Date().setHours(slot.hour, slot.minute, 0, 0));
+      
+      // 如果用户调整了时间，使用调整后的时间
+      if (sleepDetails.time && sleepDetails.time !== slot.time) {
+        const [hours, minutes] = sleepDetails.time.split(':').map(Number);
+        activityTime = new Date(new Date().setHours(hours, minutes, 0, 0));
+      }
+      
+      // 生成活动详情
+      const typeText = sleepDetails.type === 'nap' ? '小睡' : '夜间睡眠';
+      const durationText = sleepDetails.duration >= 60 
+        ? `${Math.floor(sleepDetails.duration / 60)}小时${sleepDetails.duration % 60 > 0 ? sleepDetails.duration % 60 + '分钟' : ''}`
+        : `${sleepDetails.duration}分钟`;
+      const activityDetails = `${typeText} ${durationText}${notes ? ` - ${notes}` : ''}`;
+      
+      const newActivity: BabyActivity = {
+        id: generateId(),
+        type: 'sleep',
+        timestamp: activityTime,
+        details: activityDetails
+      };
+      onAddActivity(newActivity);
+      setShowAddModal(false);
+      setSelectedTimeSlot(null);
+    }
+  };
+
   const handleModalCancel = () => {
     setShowAddModal(false);
     setSelectedTimeSlot(null);
   };
 
+  const handleClearActivities = () => {
+    if (onClearActivities) {
+      onClearActivities(projectType);
+    }
+    setShowClearConfirm(false);
+  };
+
   return (
-    <div className="w-full h-full flex flex-col bg-gray-800">
+    <div className="w-full h-full flex flex-col bg-gray-900">
       {/* 项目时间轴标题 */}
       <div className="flex items-center justify-between p-2 border-b border-gray-700 bg-gray-900">
         <div className="flex items-center space-x-2">
@@ -123,6 +214,35 @@ export default function ProjectTimeline({
             <h3 className="text-sm font-bold text-white">{config.name}</h3>
             <p className="text-xs text-gray-400">{projectActivities.length} 次活动</p>
           </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <div className="text-lg text-yellow-400">
+            {(() => {
+              const lastActivity = projectActivities.length > 0 
+                ? projectActivities[projectActivities.length - 1] 
+                : null;
+              
+              if (lastActivity) {
+                const timeDiff = Date.now() - lastActivity.timestamp.getTime();
+                const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+                const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                return `已过去: ${hours}小时${minutes}分钟`;
+              }
+              return '暂无活动';
+            })()}
+          </div>
+          
+          {/* 重置按钮 */}
+          {projectActivities.length > 0 && onClearActivities && (
+            <button
+              onClick={() => setShowClearConfirm(true)}
+              className="px-2 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
+              title="清除所有活动"
+            >
+              重置
+            </button>
+          )}
         </div>
         <div className="text-xs text-gray-400">10分钟刻度</div>
       </div>
@@ -177,11 +297,20 @@ export default function ProjectTimeline({
                   {/* 活动标记 */}
                   {slot.activities.map((activity, activityIndex) => (
                     <div key={activity.id} className="relative">
+                      {/* 高亮当前时间分割片 */}
+                      <div
+                        className="absolute top-0 left-0 w-full h-full bg-blue-500/20 border border-blue-400/50 rounded-sm"
+                        style={{ 
+                          zIndex: activityIndex + 1
+                        }}
+                      />
+                      
+                      {/* 活动图标 */}
                       <div
                         className="absolute top-1 left-1 w-4 h-4 rounded-full flex items-center justify-center text-xs cursor-pointer"
                         style={{ 
                           backgroundColor: config.color,
-                          zIndex: activityIndex + 1
+                          zIndex: activityIndex + 2
                         }}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -191,12 +320,12 @@ export default function ProjectTimeline({
                       >
                         {config.icon}
                       </div>
-                      {/* 时间标签 */}
+                      
+                      {/* 时间标签 - 居中显示 */}
                       <div
-                        className="absolute top-6 left-0 text-xs text-gray-300 bg-gray-800/90 backdrop-blur-sm px-1.5 py-0.5 rounded border border-gray-600 whitespace-nowrap shadow-sm hover:bg-gray-700/90 hover:text-white transition-colors"
+                        className="absolute bottom-0 left-1/2 transform -translate-x-1/2 text-xs text-gray-300 bg-gray-800/90 backdrop-blur-sm px-1.5 py-0.5 rounded border border-gray-600 whitespace-nowrap shadow-sm hover:bg-gray-700/90 hover:text-white transition-colors"
                         style={{ 
-                          zIndex: activityIndex + 1,
-                          left: `${activityIndex * 20}px`
+                          zIndex: activityIndex + 2
                         }}
                       >
                         {slot.time}
@@ -233,6 +362,20 @@ export default function ProjectTimeline({
                 onSubmit={handleFeedingSubmit}
                 onCancel={handleModalCancel}
               />
+            ) : projectType === 'diaper' ? (
+              // 尿布活动专用表单
+              <DiaperForm
+                initialTime={selectedTimeSlot !== null ? timeSlots[selectedTimeSlot].time : ''}
+                onSubmit={handleDiaperSubmit}
+                onCancel={handleModalCancel}
+              />
+            ) : projectType === 'sleep' ? (
+              // 睡眠活动专用表单
+              <SleepForm
+                initialTime={selectedTimeSlot !== null ? timeSlots[selectedTimeSlot].time : ''}
+                onSubmit={handleSleepSubmit}
+                onCancel={handleModalCancel}
+              />
             ) : (
               // 其他活动的通用表单
               <div className="mb-4">
@@ -245,7 +388,7 @@ export default function ProjectTimeline({
               </div>
             )}
 
-            {projectType !== 'feeding' && (
+            {projectType !== 'feeding' && projectType !== 'diaper' && projectType !== 'sleep' && (
               <div className="flex gap-2 mt-6">
                 <button
                   className="flex-1 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
@@ -265,6 +408,34 @@ export default function ProjectTimeline({
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* 清除确认模态框 */}
+      {showClearConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-80">
+            <h3 className="text-lg font-bold text-white mb-4">
+              确认清除
+            </h3>
+            <p className="text-gray-300 mb-6">
+              确定要清除所有 {config.name} 活动吗？此操作无法撤销。
+            </p>
+            <div className="flex gap-2">
+              <button
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-500"
+                onClick={() => setShowClearConfirm(false)}
+              >
+                取消
+              </button>
+              <button
+                className="flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                onClick={handleClearActivities}
+              >
+                确认清除
+              </button>
+            </div>
           </div>
         </div>
       )}
