@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import DigitalClock from '@/components/DigitalClock';
-import Timeline from '@/components/Timeline';
-import ProjectProgress from '@/components/ProjectProgress';
+import DailyStats from '@/components/DailyStats';
+import ProjectTimelines from '@/components/ProjectTimelines';
 import ActivityModal from '@/components/ActivityModal';
 import { BabyActivity, ActivityType } from '@/types';
 import { generateId } from '@/lib/utils';
@@ -62,29 +62,21 @@ export default function Home() {
     <div className="min-h-screen bg-gray-900 text-white">
       {/* 主布局 */}
       <div className="h-screen flex flex-col">
-        {/* 上方三分之一 - 数字时钟 */}
-        <div className="h-1/3 bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900">
+        {/* 上方 - 数字时钟 */}
+        <div className="bg-gradient-to-br from-blue-900 via-purple-900 to-pink-900">
           <DigitalClock />
         </div>
 
-        {/* 下方三分之二 - 项目进度和时间轴 */}
-        <div className="h-2/3 flex">
-          {/* 左侧 - 项目进度 */}
-          <div className="w-1/2 border-r border-gray-700">
-            <ProjectProgress 
-              activities={activities}
-              onProjectClick={handleQuickAdd}
-            />
-          </div>
+        {/* 今日统计 - 占据一整行 */}
+        <DailyStats activities={activities} />
 
-          {/* 右侧 - 时间轴 */}
-          <div className="w-1/2">
-            <Timeline 
-              activities={activities}
-              onAddActivity={handleAddActivity}
-              onActivityClick={handleActivityClick}
-            />
-          </div>
+        {/* 下方 - 项目时间轴 */}
+        <div className="flex-1">
+          <ProjectTimelines 
+            activities={activities}
+            onAddActivity={handleAddActivity}
+            onActivityClick={handleActivityClick}
+          />
         </div>
       </div>
 

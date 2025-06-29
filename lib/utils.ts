@@ -26,15 +26,27 @@ export function generateId(): string {
 
 export function getActivityConfig(type: ActivityType) {
   const configs = {
-    feeding: { name: '喂养', icon: '🍼', color: '#3b82f6' },
-    diaper: { name: '尿布', icon: '👶', color: '#10b981' },
-    sleep: { name: '睡眠', icon: '😴', color: '#8b5cf6' },
-    play: { name: '玩耍', icon: '🧸', color: '#f59e0b' },
-    bath: { name: '洗澡', icon: '🛁', color: '#06b6d4' },
-    medicine: { name: '用药', icon: '💊', color: '#ef4444' },
-    custom: { name: '自定义', icon: '📝', color: '#6b7280' }
+    feeding: { name: '喂养', icon: '🍼', color: '#3b82f6', targetFrequency: 8 },
+    diaper: { name: '尿布', icon: '👶', color: '#10b981', targetFrequency: 6 },
+    sleep: { name: '睡眠', icon: '😴', color: '#8b5cf6', targetFrequency: 3 },
+    play: { name: '玩耍', icon: '🧸', color: '#f59e0b', targetFrequency: 4 },
+    bath: { name: '洗澡', icon: '🛁', color: '#06b6d4', targetFrequency: 1 },
+    medicine: { name: '用药', icon: '💊', color: '#ef4444', targetFrequency: 2 },
+    custom: { name: '自定义', icon: '📝', color: '#6b7280', targetFrequency: 5 }
   };
   return configs[type] || configs.custom;
+}
+
+export function getAllActivityConfigs() {
+  return {
+    feeding: { name: '喂养', icon: '🍼', color: '#3b82f6', targetFrequency: 8 },
+    diaper: { name: '尿布', icon: '👶', color: '#10b981', targetFrequency: 6 },
+    sleep: { name: '睡眠', icon: '😴', color: '#8b5cf6', targetFrequency: 3 },
+    play: { name: '玩耍', icon: '🧸', color: '#f59e0b', targetFrequency: 4 },
+    bath: { name: '洗澡', icon: '🛁', color: '#06b6d4', targetFrequency: 1 },
+    medicine: { name: '用药', icon: '💊', color: '#ef4444', targetFrequency: 2 },
+    custom: { name: '自定义', icon: '📝', color: '#6b7280', targetFrequency: 5 }
+  };
 }
 
 export function padZero(num: number): string {

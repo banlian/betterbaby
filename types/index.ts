@@ -21,6 +21,7 @@ export interface ActivityConfig {
   icon: string;
   color: string;
   description?: string;
+  targetFrequency: number;
 }
 
 export interface TimeSlot {

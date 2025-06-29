@@ -6,42 +6,48 @@ export const ACTIVITY_CONFIGS: Record<string, ActivityConfig> = {
     name: '喂养',
     icon: '🍼',
     color: '#3b82f6',
-    description: '记录宝宝的喂养情况'
+    description: '记录宝宝的喂养情况',
+    targetFrequency: 4
   },
   diaper: {
     type: 'diaper',
     name: '尿布',
     icon: '👶',
     color: '#10b981',
-    description: '记录尿布更换情况'
+    description: '记录尿布更换情况',
+    targetFrequency: 6
   },
   sleep: {
     type: 'sleep',
     name: '睡眠',
     icon: '😴',
     color: '#8b5cf6',
-    description: '记录宝宝的睡眠时间'
+    description: '记录宝宝的睡眠时间',
+    targetFrequency: 3
   },
   play: {
     type: 'play',
     name: '玩耍',
     icon: '🧸',
     color: '#f59e0b',
-    description: '记录宝宝的玩耍活动'
+    description: '记录宝宝的玩耍活动',
+    targetFrequency: 4
   },
   bath: {
     type: 'bath',
     name: '洗澡',
     icon: '🛁',
     color: '#06b6d4',
-    description: '记录宝宝的洗澡时间'
+    description: '记录宝宝的洗澡时间',
+    targetFrequency: 1
   },
   medicine: {
     type: 'medicine',
     name: '用药',
     icon: '💊',
     color: '#ef4444',
-    description: '记录宝宝的用药情况'
+    description: '记录宝宝的用药情况',
+    targetFrequency: 2
   }
 };
 
