@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { BabyActivity, ActivityType } from '@/types';
 import { getActivityConfig, getAllActivityConfigs, formatTime } from '@/lib/utils';
 
@@ -9,12 +9,28 @@ interface DailyStatsProps {
 }
 
 export default function DailyStats({ activities }: DailyStatsProps) {
+  const [isClient, setIsClient] = useState(false);
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
+  
   const activityConfigs = getAllActivityConfigs();
+
+  // 客户端时间管理
+  useEffect(() => {
+    setIsClient(true);
+    setCurrentTime(new Date());
+    
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   // 计算时间差的函数
   const getTimeDifference = (lastTime: Date): string => {
-    const now = new Date();
-    const diffMs = now.getTime() - lastTime.getTime();
+    if (!isClient || !currentTime) return '--:--';
+    
+    const diffMs = currentTime.getTime() - lastTime.getTime();
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     
@@ -27,7 +43,21 @@ export default function DailyStats({ activities }: DailyStatsProps) {
 
   // 计算今日各项目统计和上次时间
   const dailyStats = useMemo(() => {
-    const todayStart = new Date();
+    if (!isClient || !currentTime) {
+      // 在服务器端或客户端时间未初始化时，返回空统计
+      const emptyStats: Record<ActivityType, { count: number; lastTime: Date | null }> = {
+        feeding: { count: 0, lastTime: null },
+        diaper: { count: 0, lastTime: null },
+        sleep: { count: 0, lastTime: null },
+        play: { count: 0, lastTime: null },
+        bath: { count: 0, lastTime: null },
+        medicine: { count: 0, lastTime: null },
+        custom: { count: 0, lastTime: null }
+      };
+      return emptyStats;
+    }
+
+    const todayStart = new Date(currentTime);
     todayStart.setHours(0, 0, 0, 0);
     
     const todayActivities = activities.filter(activity => 
@@ -59,7 +89,7 @@ export default function DailyStats({ activities }: DailyStatsProps) {
     });
 
     return stats;
-  }, [activities]);
+  }, [activities, isClient, currentTime]);
 
   // 计算总次数
   const totalActivities = useMemo(() => {

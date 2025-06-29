@@ -25,16 +25,7 @@ function timeToMinutes(time: string): number {
 function minutesToTime(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const mins = minutes % 60;
-  return `${hours.toString().padStart(2, "0")}:${mins
-    .toString()
-    .padStart(2, "0")}`;
-}
-
-function getCurrentTimeSlot(): number {
-  const now = new Date();
-  const hours = now.getHours();
-  const minutes = now.getMinutes();
-  return hours * 60 + Math.floor(minutes / 10) * 10;
+  return `${hours.toString().padStart(2, "0")}:${mins.toString().padStart(2, "0")}`;
 }
 
 // 获取指定时间前后半小时的时间范围
